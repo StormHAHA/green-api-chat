@@ -11,7 +11,6 @@
   --color-accent: #3a6cf4;
   --color-accent-hover: #2d5de0;
   --color-accent-contrast: #ffffff;
-  --color-accent-soft: #e5ecff;
   --color-danger: #e5484d;
   --color-danger-soft: #fdecec;
   --color-success: #2fb36b;
@@ -21,7 +20,6 @@
   --color-overlay: rgb(15 17 21 / 40%);
   --gradient-brand: linear-gradient(135deg, #4f7cff 0%, #8a4dff 100%);
 
-  --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
   --shadow-bubble: 0 1px 1px rgb(15 17 21 / 6%);
@@ -51,7 +49,6 @@
     --color-text-secondary: #8b919c;
     --color-accent: #5b86ff;
     --color-accent-hover: #6f95ff;
-    --color-accent-soft: #263150;
     --color-danger: #ff6b6f;
     --color-danger-soft: #3a2224;
     --color-bubble-in: #24262c;

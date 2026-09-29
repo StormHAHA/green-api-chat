@@ -5,13 +5,7 @@ export interface Credentials {
 }
 
 export type InstanceState =
-  | 'authorized'
-  | 'notAuthorized'
-  | 'blocked'
-  | 'suspended'
-  | 'starting'
-  | 'pendingPassword'
-  | 'yellowCard'
+  'authorized' | 'notAuthorized' | 'blocked' | 'suspended' | 'starting' | 'pendingPassword'
 
 export interface StateInstanceResponse {
   stateInstance: InstanceState
