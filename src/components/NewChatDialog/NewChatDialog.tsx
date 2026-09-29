@@ -49,8 +49,8 @@ export function NewChatDialog({ open, onClose, onSubmit }: NewChatDialogProps) {
     try {
       await onSubmit(normalized)
       handleClose()
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Не удалось создать чат')
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Не удалось создать чат')
     } finally {
       setIsSubmitting(false)
     }

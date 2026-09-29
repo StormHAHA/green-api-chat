@@ -9,6 +9,9 @@ const RECEIVE_TIMEOUT_SECONDS = 20
 const MIN_RETRY_DELAY_MS = 2_000
 const MAX_RETRY_DELAY_MS = 30_000
 
+// Один и тот же объект, чтобы setStatus не вызывал перерисовку на каждом цикле опроса
+const ONLINE: ConnectionStatus = { state: 'online' }
+
 function wait(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
     const timer = setTimeout(resolve, ms)
@@ -48,7 +51,7 @@ export function useNotificationPolling(
       while (!signal.aborted) {
         try {
           const notification = await client.receiveNotification(RECEIVE_TIMEOUT_SECONDS, signal)
-          setStatus({ state: 'online' })
+          setStatus(ONLINE)
           retryDelay = MIN_RETRY_DELAY_MS
 
           if (!notification) continue

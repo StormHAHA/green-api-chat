@@ -21,25 +21,35 @@ export function useChats(client: GreenApiClient, idInstance: string) {
   const openChat = useCallback(
     async (phone: string) => {
       const chatId = await resolveChatId(client, phone)
-      dispatch({ type: 'chatOpened', id: createId(), chatId, phone, createdAt: Date.now() })
+      dispatch({
+        type: 'chatOpened',
+        localChatId: createId(),
+        chatId,
+        phone,
+        createdAt: Date.now(),
+      })
     },
     [client],
   )
 
-  const selectChat = useCallback((id: string | null) => {
-    dispatch({ type: 'chatSelected', id })
+  const selectChat = useCallback((localChatId: string | null) => {
+    dispatch({ type: 'chatSelected', localChatId })
   }, [])
 
   const deliver = useCallback(
-    async (chat: Chat, message: Message) => {
+    async (localChatId: string, message: Message) => {
+      // chatId мог уточниться, пока сообщение ждало отправки, поэтому берём актуальный
+      const chat = chatsRef.current.find((item) => item.id === localChatId)
+      if (!chat) return
+
       try {
         const { idMessage } = await client.sendMessage({
           chatId: chat.chatId,
           message: message.text,
         })
-        dispatch({ type: 'messageSent', chatId: chat.id, localId: message.id, idMessage })
+        dispatch({ type: 'messageSent', localChatId, localMessageId: message.id, idMessage })
       } catch {
-        dispatch({ type: 'messageFailed', chatId: chat.id, localId: message.id })
+        dispatch({ type: 'messageFailed', localChatId, localMessageId: message.id })
       }
     },
     [client],
@@ -54,24 +64,23 @@ export function useChats(client: GreenApiClient, idInstance: string) {
         timestamp: Date.now(),
         status: 'sending',
       }
-      dispatch({ type: 'messageQueued', chatId: chat.id, message })
-      void deliver(chat, message)
+      dispatch({ type: 'messageQueued', localChatId: chat.id, message })
+      void deliver(chat.id, message)
     },
     [deliver],
   )
 
   const retryMessage = useCallback(
     (chat: Chat, message: Message) => {
-      dispatch({ type: 'messageRetried', chatId: chat.id, localId: message.id })
-      const current = chatsRef.current.find((item) => item.id === chat.id) ?? chat
-      void deliver(current, message)
+      dispatch({ type: 'messageRetried', localChatId: chat.id, localMessageId: message.id })
+      void deliver(chat.id, message)
     },
     [deliver],
   )
 
   const handleNotification = useCallback((body: NotificationBody) => {
     const event = parseNotification(body)
-    if (event) dispatch({ type: 'messageReceived', event, newChatId: createId() })
+    if (event) dispatch({ type: 'messageReceived', event, newLocalChatId: createId() })
   }, [])
 
   return { state, openChat, selectChat, sendMessage, retryMessage, handleNotification }
@@ -83,15 +92,20 @@ export function useChats(client: GreenApiClient, idInstance: string) {
  * Если проверка временно недоступна (лимиты, сбой мессенджера), отправляем по номеру телефона.
  */
 async function resolveChatId(client: GreenApiClient, phone: string): Promise<string> {
+  let account
   try {
-    const account = await client.checkAccount(phone)
-    if (account.exist === false) {
-      throw new Error('Аккаунт Telegram с этим номером не найден или скрыт настройками приватности')
-    }
-    if (account.exist && account.chatId) return account.chatId
+    account = await client.checkAccount(phone)
   } catch (error) {
-    const isFatal = !(error instanceof GreenApiError) || [0, 401, 403].includes(error.status)
-    if (isFatal) throw error
+    if (isCredentialsOrNetworkError(error)) throw error
+    return phoneToChatId(phone)
   }
-  return phoneToChatId(phone)
+
+  if (account.exist === false) {
+    throw new Error('Аккаунт Telegram с этим номером не найден или скрыт настройками приватности')
+  }
+  return account.exist && account.chatId ? account.chatId : phoneToChatId(phone)
+}
+
+function isCredentialsOrNetworkError(error: unknown): boolean {
+  return !(error instanceof GreenApiError) || [0, 401, 403].includes(error.status)
 }

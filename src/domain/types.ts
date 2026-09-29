@@ -3,6 +3,7 @@ export type MessageDirection = 'incoming' | 'outgoing'
 export type MessageStatus = 'sending' | 'sent' | 'failed'
 
 export interface Message {
+  /** idMessage из GREEN-API, для ещё не отправленных - временный локальный id */
   id: string
   text: string
   direction: MessageDirection
@@ -12,7 +13,9 @@ export interface Message {
 }
 
 export interface Chat {
+  /** Локальный идентификатор, не меняется за всё время жизни чата */
   id: string
+  /** Идентификатор чата в GREEN-API, может уточниться после первого входящего */
   chatId: string
   phone?: string
   name?: string
@@ -24,10 +27,10 @@ export interface Chat {
 
 export interface ChatState {
   chats: Chat[]
-  activeChatId: string | null
+  activeLocalChatId: string | null
 }
 
-export interface MessageEvent {
+export interface ChatMessageEvent {
   direction: MessageDirection
   idMessage: string
   chatId: string

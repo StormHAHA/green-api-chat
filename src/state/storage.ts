@@ -3,6 +3,8 @@ import type { ChatState } from '../domain/types'
 import { initialChatState } from './chatReducer'
 
 const CREDENTIALS_KEY = 'green-api-chat:credentials'
+/** Ограничение истории, чтобы не упереться в лимит localStorage (~5 МБ) */
+const MAX_STORED_MESSAGES_PER_CHAT = 500
 const chatsKey = (idInstance: string) => `green-api-chat:chats:${idInstance}`
 
 function read<T>(key: string): T | null {
@@ -18,7 +20,7 @@ function write(key: string, value: unknown): void {
   try {
     localStorage.setItem(key, JSON.stringify(value))
   } catch {
-    // Хранилище недоступно (приватный режим, переполнение) — работаем без сохранения
+    // Хранилище недоступно (приватный режим, переполнение), работаем без сохранения
   }
 }
 
@@ -50,7 +52,7 @@ export function loadChatState(idInstance: string): ChatState {
 
   // Сообщения, которые не успели уйти до перезагрузки страницы, считаем неотправленными
   return {
-    activeChatId: null,
+    activeLocalChatId: null,
     chats: state.chats.map((chat) => ({
       ...chat,
       messages: chat.messages.map((message) =>
@@ -61,5 +63,11 @@ export function loadChatState(idInstance: string): ChatState {
 }
 
 export function saveChatState(idInstance: string, state: ChatState): void {
-  write(chatsKey(idInstance), state)
+  write(chatsKey(idInstance), {
+    ...state,
+    chats: state.chats.map((chat) => ({
+      ...chat,
+      messages: chat.messages.slice(-MAX_STORED_MESSAGES_PER_CHAT),
+    })),
+  })
 }

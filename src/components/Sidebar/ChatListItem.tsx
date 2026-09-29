@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { getChatTitle } from '../../domain/chat'
 import type { Chat } from '../../domain/types'
-import { getLastActivity } from '../../state/chatReducer'
+import { getLastActivity } from '../../state/selectors'
 import { formatChatTime } from '../../utils/date'
 import { Avatar } from '../Avatar/Avatar'
 import { AlertIcon } from '../Icons'

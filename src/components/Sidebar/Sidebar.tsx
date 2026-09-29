@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Chat } from '../../domain/types'
 import type { ConnectionStatus } from '../../hooks/useNotificationPolling'
-import { sortChatsByActivity } from '../../state/chatReducer'
+import { sortChatsByActivity } from '../../state/selectors'
 import { ComposeIcon, LogoutIcon } from '../Icons'
 import { NewChatDialog } from '../NewChatDialog/NewChatDialog'
 import { Button } from '../ui/Button'
@@ -17,7 +17,7 @@ const CONNECTION_LABELS: Record<ConnectionStatus['state'], string> = {
 interface SidebarProps {
   className?: string
   chats: Chat[]
-  activeChatId: string | null
+  activeLocalChatId: string | null
   connection: ConnectionStatus
   idInstance: string
   onSelectChat: (id: string) => void
@@ -28,7 +28,7 @@ interface SidebarProps {
 export function Sidebar({
   className,
   chats,
-  activeChatId,
+  activeLocalChatId,
   connection,
   idInstance,
   onSelectChat,
@@ -80,7 +80,7 @@ export function Sidebar({
             <ChatListItem
               key={chat.id}
               chat={chat}
-              isActive={chat.id === activeChatId}
+              isActive={chat.id === activeLocalChatId}
               onSelect={onSelectChat}
             />
           ))}

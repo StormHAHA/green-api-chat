@@ -21,14 +21,14 @@ export function Messenger({ credentials, onLogout }: MessengerProps) {
   )
   const connection = useNotificationPolling(client, handleNotification)
 
-  const activeChat = state.chats.find((chat) => chat.id === state.activeChatId) ?? null
+  const activeChat = state.chats.find((chat) => chat.id === state.activeLocalChatId) ?? null
 
   return (
     <div className={styles.layout} data-chat-open={activeChat !== null}>
       <Sidebar
         className={styles.sidebar}
         chats={state.chats}
-        activeChatId={state.activeChatId}
+        activeLocalChatId={state.activeLocalChatId}
         connection={connection}
         idInstance={credentials.idInstance}
         onSelectChat={selectChat}

@@ -1,68 +1,51 @@
-import type { Chat, ChatState, Message, MessageEvent } from '../domain/types'
+import type { Chat, ChatMessageEvent, ChatState, Message } from '../domain/types'
 
+/**
+ * localChatId - локальный идентификатор чата (Chat.id),
+ * chatId - идентификатор чата в GREEN-API (Chat.chatId).
+ */
 export type ChatAction =
   | {
       type: 'chatOpened'
-      id: string
+      localChatId: string
       chatId: string
       phone?: string
-      name?: string
       createdAt: number
     }
-  | { type: 'chatSelected'; id: string | null }
-  | { type: 'messageQueued'; chatId: string; message: Message }
-  | { type: 'messageSent'; chatId: string; localId: string; idMessage: string }
-  | { type: 'messageFailed'; chatId: string; localId: string }
-  | { type: 'messageRetried'; chatId: string; localId: string }
-  | { type: 'messageReceived'; event: MessageEvent; newChatId: string }
+  | { type: 'chatSelected'; localChatId: string | null }
+  | { type: 'messageQueued'; localChatId: string; message: Message }
+  | {
+      type: 'messageSent'
+      localChatId: string
+      localMessageId: string
+      idMessage: string
+    }
+  | { type: 'messageFailed'; localChatId: string; localMessageId: string }
+  | { type: 'messageRetried'; localChatId: string; localMessageId: string }
+  | { type: 'messageReceived'; event: ChatMessageEvent; newLocalChatId: string }
 
-export const initialChatState: ChatState = { chats: [], activeChatId: null }
+export const initialChatState: ChatState = { chats: [], activeLocalChatId: null }
 
 export function chatReducer(state: ChatState, action: ChatAction): ChatState {
   switch (action.type) {
-    case 'chatOpened': {
-      const existing = state.chats.find(
-        (chat) =>
-          chat.chatId === action.chatId ||
-          (action.phone !== undefined && chat.phone === action.phone),
-      )
-      if (existing) {
-        const chats = updateChat(state.chats, existing.id, (chat) => ({
-          ...chat,
-          chatId: action.chatId,
-          unreadCount: 0,
-        }))
-        return { chats, activeChatId: existing.id }
-      }
-
-      const chat: Chat = {
-        id: action.id,
-        chatId: action.chatId,
-        phone: action.phone,
-        name: action.name,
-        isGroup: false,
-        messages: [],
-        unreadCount: 0,
-        createdAt: action.createdAt,
-      }
-      return { chats: [chat, ...state.chats], activeChatId: chat.id }
-    }
+    case 'chatOpened':
+      return openChat(state, action)
 
     case 'chatSelected':
       return {
         chats:
-          action.id === null
+          action.localChatId === null
             ? state.chats
-            : updateChat(state.chats, action.id, (chat) =>
+            : updateChat(state.chats, action.localChatId, (chat) =>
                 chat.unreadCount === 0 ? chat : { ...chat, unreadCount: 0 },
               ),
-        activeChatId: action.id,
+        activeLocalChatId: action.localChatId,
       }
 
     case 'messageQueued':
       return {
         ...state,
-        chats: updateChat(state.chats, action.chatId, (chat) => ({
+        chats: updateChat(state.chats, action.localChatId, (chat) => ({
           ...chat,
           messages: insertMessage(chat.messages, action.message),
         })),
@@ -71,17 +54,17 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'messageSent':
       return {
         ...state,
-        chats: updateChat(state.chats, action.chatId, (chat) => {
+        chats: updateChat(state.chats, action.localChatId, (chat) => {
           // Уведомление об отправке через API могло прийти раньше ответа sendMessage
           if (chat.messages.some((message) => message.id === action.idMessage)) {
             return {
               ...chat,
-              messages: chat.messages.filter((message) => message.id !== action.localId),
+              messages: chat.messages.filter((message) => message.id !== action.localMessageId),
             }
           }
           return {
             ...chat,
-            messages: updateMessage(chat.messages, action.localId, (message) => ({
+            messages: updateMessage(chat.messages, action.localMessageId, (message) => ({
               ...message,
               id: action.idMessage,
               status: 'sent',
@@ -91,22 +74,56 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
       }
 
     case 'messageFailed':
-      return setMessageStatus(state, action.chatId, action.localId, 'failed')
+      return setMessageStatus(state, action.localChatId, action.localMessageId, 'failed')
 
     case 'messageRetried':
-      return setMessageStatus(state, action.chatId, action.localId, 'sending')
+      return setMessageStatus(state, action.localChatId, action.localMessageId, 'sending')
 
     case 'messageReceived':
-      return receiveMessage(state, action.event, action.newChatId)
+      return receiveMessage(state, action.event, action.newLocalChatId)
   }
 }
 
-function receiveMessage(state: ChatState, event: MessageEvent, newChatId: string): ChatState {
+function openChat(
+  state: ChatState,
+  action: Extract<ChatAction, { type: 'chatOpened' }>,
+): ChatState {
+  const existing = state.chats.find(
+    (chat) =>
+      chat.chatId === action.chatId || (action.phone !== undefined && chat.phone === action.phone),
+  )
+
+  if (existing) {
+    const chats = updateChat(state.chats, existing.id, (chat) => ({
+      ...chat,
+      chatId: action.chatId,
+      unreadCount: 0,
+    }))
+    return { chats, activeLocalChatId: existing.id }
+  }
+
+  const chat: Chat = {
+    id: action.localChatId,
+    chatId: action.chatId,
+    phone: action.phone,
+    isGroup: false,
+    messages: [],
+    unreadCount: 0,
+    createdAt: action.createdAt,
+  }
+  return { chats: [chat, ...state.chats], activeLocalChatId: chat.id }
+}
+
+function receiveMessage(
+  state: ChatState,
+  event: ChatMessageEvent,
+  newLocalChatId: string,
+): ChatState {
   const target = findChatForEvent(state.chats, event)
 
   if (!target) {
     const chat: Chat = {
-      id: newChatId,
+      id: newLocalChatId,
       chatId: event.chatId,
       phone: event.isGroup ? undefined : event.senderPhone,
       name: event.chatName,
@@ -138,7 +155,7 @@ function receiveMessage(state: ChatState, event: MessageEvent, newChatId: string
         }))
       : insertMessage(chat.messages, toMessage(event))
 
-    const isUnread = event.direction === 'incoming' && state.activeChatId !== chat.id
+    const isUnread = event.direction === 'incoming' && state.activeLocalChatId !== chat.id
 
     return {
       ...chat,
@@ -153,13 +170,13 @@ function receiveMessage(state: ChatState, event: MessageEvent, newChatId: string
   return { ...state, chats }
 }
 
-function findChatForEvent(chats: Chat[], event: MessageEvent): Chat | undefined {
+function findChatForEvent(chats: Chat[], event: ChatMessageEvent): Chat | undefined {
   const byChatId = chats.find((chat) => chat.chatId === event.chatId)
   if (byChatId || event.isGroup || !event.senderPhone) return byChatId
   return chats.find((chat) => chat.phone === event.senderPhone)
 }
 
-function toMessage(event: MessageEvent): Message {
+function toMessage(event: ChatMessageEvent): Message {
   return {
     id: event.idMessage,
     text: event.text,
@@ -170,29 +187,29 @@ function toMessage(event: MessageEvent): Message {
   }
 }
 
-function updateChat(chats: Chat[], id: string, update: (chat: Chat) => Chat): Chat[] {
-  return chats.map((chat) => (chat.id === id ? update(chat) : chat))
+function updateChat(chats: Chat[], localChatId: string, update: (chat: Chat) => Chat): Chat[] {
+  return chats.map((chat) => (chat.id === localChatId ? update(chat) : chat))
 }
 
 function updateMessage(
   messages: Message[],
-  id: string,
+  messageId: string,
   update: (message: Message) => Message,
 ): Message[] {
-  return messages.map((message) => (message.id === id ? update(message) : message))
+  return messages.map((message) => (message.id === messageId ? update(message) : message))
 }
 
 function setMessageStatus(
   state: ChatState,
-  chatId: string,
-  localId: string,
+  localChatId: string,
+  localMessageId: string,
   status: Message['status'],
 ): ChatState {
   return {
     ...state,
-    chats: updateChat(state.chats, chatId, (chat) => ({
+    chats: updateChat(state.chats, localChatId, (chat) => ({
       ...chat,
-      messages: updateMessage(chat.messages, localId, (message) => ({ ...message, status })),
+      messages: updateMessage(chat.messages, localMessageId, (message) => ({ ...message, status })),
     })),
   }
 }
@@ -200,12 +217,4 @@ function setMessageStatus(
 function insertMessage(messages: Message[], message: Message): Message[] {
   const index = messages.findLastIndex((existing) => existing.timestamp <= message.timestamp)
   return [...messages.slice(0, index + 1), message, ...messages.slice(index + 1)]
-}
-
-export function getLastActivity(chat: Chat): number {
-  return chat.messages.at(-1)?.timestamp ?? chat.createdAt
-}
-
-export function sortChatsByActivity(chats: Chat[]): Chat[] {
-  return [...chats].sort((a, b) => getLastActivity(b) - getLastActivity(a))
 }

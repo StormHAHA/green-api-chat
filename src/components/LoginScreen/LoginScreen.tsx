@@ -55,8 +55,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         return
       }
       onLogin(credentials)
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Не удалось подключиться к GREEN-API')
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error ? caughtError.message : 'Не удалось подключиться к GREEN-API',
+      )
     } finally {
       setIsSubmitting(false)
     }

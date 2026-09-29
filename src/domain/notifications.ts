@@ -1,5 +1,5 @@
 import type { MessageData, MessageWebhook, NotificationBody, SenderData } from '../api/types'
-import type { MessageDirection, MessageEvent } from './types'
+import type { MessageDirection, ChatMessageEvent } from './types'
 
 const DIRECTION_BY_WEBHOOK: Record<MessageWebhook['typeWebhook'], MessageDirection> = {
   incomingMessageReceived: 'incoming',
@@ -34,7 +34,7 @@ function isGroupChat(senderData: SenderData): boolean {
  * Возвращает null для всего, что не является текстовым сообщением:
  * статусов, медиа, событий инстанса и т. п.
  */
-export function parseNotification(body: NotificationBody): MessageEvent | null {
+export function parseNotification(body: NotificationBody): ChatMessageEvent | null {
   if (!isMessageWebhook(body)) return null
 
   const text = extractText(body.messageData)
