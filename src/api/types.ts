@@ -68,7 +68,7 @@ export interface OtherWebhook {
 
 export type NotificationBody = MessageWebhook | OtherWebhook
 
-export interface Notification {
+export interface ReceivedNotification {
   receiptId: number
   body: NotificationBody
 }

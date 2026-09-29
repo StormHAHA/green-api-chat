@@ -2,7 +2,7 @@ import type {
   CheckAccountResponse,
   Credentials,
   DeleteNotificationResponse,
-  Notification,
+  ReceivedNotification,
   SendMessageRequest,
   SendMessageResponse,
   StateInstanceResponse,
@@ -24,7 +24,12 @@ interface RequestOptions {
   query?: Record<string, string | number>
   body?: unknown
   signal?: AbortSignal
+  timeoutMs?: number
 }
+
+const DEFAULT_TIMEOUT_MS = 15_000
+/** Запас сверх receiveTimeout, чтобы long polling не обрывался раньше ответа сервера */
+const LONG_POLL_EXTRA_MS = 10_000
 
 const STATUS_MESSAGES: Record<number, string> = {
   401: 'Неверный idInstance или apiTokenInstance',
@@ -41,7 +46,14 @@ export function createGreenApiClient(credentials: Credentials) {
   const baseUrl = `${normalizeApiUrl(credentials.apiUrl)}/waInstance${credentials.idInstance}`
 
   async function request<T>(apiMethod: string, options: RequestOptions = {}): Promise<T> {
-    const { method = 'GET', pathSuffix = '', query, body, signal } = options
+    const {
+      method = 'GET',
+      pathSuffix = '',
+      query,
+      body,
+      signal,
+      timeoutMs = DEFAULT_TIMEOUT_MS,
+    } = options
 
     let url = `${baseUrl}/${apiMethod}/${credentials.apiTokenInstance}${pathSuffix}`
     if (query) {
@@ -51,20 +63,26 @@ export function createGreenApiClient(credentials: Credentials) {
       url += `?${params}`
     }
 
+    const timeoutSignal = AbortSignal.timeout(timeoutMs)
     let response: Response
+    let text: string
     try {
       response = await fetch(url, {
         method,
-        signal,
+        signal: signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal,
         headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
         body: body === undefined ? undefined : JSON.stringify(body),
       })
+      text = await response.text()
     } catch (error) {
       if (signal?.aborted) throw error
-      throw new GreenApiError(0, 'Нет соединения с сервером GREEN-API')
+      throw new GreenApiError(
+        0,
+        timeoutSignal.aborted
+          ? 'Сервер GREEN-API не отвечает'
+          : 'Нет соединения с сервером GREEN-API',
+      )
     }
-
-    const text = await response.text()
 
     if (!response.ok) {
       throw new GreenApiError(
@@ -73,7 +91,12 @@ export function createGreenApiClient(credentials: Credentials) {
       )
     }
 
-    return (text ? JSON.parse(text) : null) as T
+    if (!text) return null as T
+    try {
+      return JSON.parse(text) as T
+    } catch {
+      throw new GreenApiError(response.status, 'Некорректный ответ сервера GREEN-API')
+    }
   }
 
   return {
@@ -94,9 +117,10 @@ export function createGreenApiClient(credentials: Credentials) {
     },
 
     receiveNotification(receiveTimeout: number, signal?: AbortSignal) {
-      return request<Notification | null>('receiveNotification', {
+      return request<ReceivedNotification | null>('receiveNotification', {
         query: { receiveTimeout },
         signal,
+        timeoutMs: receiveTimeout * 1000 + LONG_POLL_EXTRA_MS,
       })
     },
 
@@ -118,7 +142,7 @@ function extractErrorMessage(text: string, status: number): string {
     const message = data.message ?? data.reason
     if (typeof message === 'string' && message) return message
   } catch {
-    // Ответ не в формате JSON — используем текст как есть
+    // Ответ не в формате JSON, используем текст как есть
   }
   const plain = text
     .replace(/<[^>]*>/g, ' ')
