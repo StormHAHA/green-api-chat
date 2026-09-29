@@ -1,0 +1,120 @@
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f5f8;
+  --color-chat-bg: #eceff4;
+  --color-hover: #f2f4f7;
+  --color-selected: #e8eeff;
+  --color-border: #e6e8ed;
+  --color-text: #0f1115;
+  --color-text-secondary: #7b8290;
+  --color-accent: #3a6cf4;
+  --color-accent-hover: #2d5de0;
+  --color-accent-contrast: #ffffff;
+  --color-accent-soft: #e5ecff;
+  --color-danger: #e5484d;
+  --color-danger-soft: #fdecec;
+  --color-success: #2fb36b;
+  --color-bubble-in: #ffffff;
+  --color-bubble-out: #dce6ff;
+  --color-bubble-meta: #8a919e;
+  --color-overlay: rgb(15 17 21 / 40%);
+  --gradient-brand: linear-gradient(135deg, #4f7cff 0%, #8a4dff 100%);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --shadow-bubble: 0 1px 1px rgb(15 17 21 / 6%);
+  --shadow-popup: 0 12px 40px rgb(15 17 21 / 18%);
+
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--color-text);
+  background: var(--color-bg);
+  color-scheme: light dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #16171b;
+    --color-surface: #1c1d22;
+    --color-surface-muted: #24262c;
+    --color-chat-bg: #111215;
+    --color-hover: #25272d;
+    --color-selected: #263150;
+    --color-border: #2a2c33;
+    --color-text: #eef0f4;
+    --color-text-secondary: #8b919c;
+    --color-accent: #5b86ff;
+    --color-accent-hover: #6f95ff;
+    --color-accent-soft: #263150;
+    --color-danger: #ff6b6f;
+    --color-danger-soft: #3a2224;
+    --color-bubble-in: #24262c;
+    --color-bubble-out: #2d4a94;
+    --color-bubble-meta: #a3aab6;
+    --color-overlay: rgb(0 0 0 / 55%);
+    --shadow-bubble: none;
+    --shadow-popup: 0 12px 40px rgb(0 0 0 / 50%);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

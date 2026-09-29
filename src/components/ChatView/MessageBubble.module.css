@@ -1,0 +1,100 @@
+.row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.row[data-direction='outgoing'] {
+  align-items: flex-end;
+}
+
+.row[data-last='true'] {
+  margin-bottom: 8px;
+}
+
+.bubble {
+  max-width: min(75%, 560px);
+  padding: 7px 12px;
+  border-radius: var(--radius-lg);
+  background: var(--color-bubble-in);
+  box-shadow: var(--shadow-bubble);
+  animation: appear 0.16s ease-out;
+}
+
+.row[data-direction='outgoing'] .bubble {
+  background: var(--color-bubble-out);
+}
+
+.row[data-direction='incoming'][data-last='true'] .bubble {
+  border-bottom-left-radius: 6px;
+}
+
+.row[data-direction='outgoing'][data-last='true'] .bubble {
+  border-bottom-right-radius: 6px;
+}
+
+.sender {
+  margin: 0 0 2px;
+  color: var(--color-accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Метаданные «плавают» справа внизу, не перенося текст на новую строку без необходимости */
+.meta {
+  display: inline-flex;
+  float: right;
+  align-items: center;
+  gap: 3px;
+  margin: 6px 0 -4px 10px;
+  color: var(--color-bubble-meta);
+  font-size: 12px;
+  line-height: 1;
+  user-select: none;
+}
+
+.row[data-direction='outgoing'] .meta {
+  color: var(--color-accent);
+}
+
+.failedIcon {
+  color: var(--color-danger);
+}
+
+.retry {
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-danger);
+  font-size: 12px;
+}
+
+.retry:hover {
+  text-decoration: underline;
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (max-width: 767px) {
+  .bubble {
+    max-width: 85%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble {
+    animation: none;
+  }
+}

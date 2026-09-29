@@ -1,0 +1,122 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--color-surface);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 12px 10px 20px;
+}
+
+.heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.statusDot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-secondary);
+}
+
+.status[data-state='online'] .statusDot {
+  background: var(--color-success);
+}
+
+.status[data-state='error'] .statusDot {
+  background: var(--color-danger);
+}
+
+.status[data-state='connecting'] .statusDot {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.iconButton {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-secondary);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.iconButton:hover {
+  background: var(--color-hover);
+  color: var(--color-accent);
+}
+
+.banner {
+  margin: 0 12px 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  padding: 0 8px 8px;
+  overflow-y: auto;
+}
+
+.empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-weight: 600;
+}
+
+.emptyText {
+  margin: 0 0 12px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
