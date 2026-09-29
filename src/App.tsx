@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Credentials } from './api/types'
 import { LoginScreen } from './components/LoginScreen/LoginScreen'
 import { Messenger } from './components/Messenger/Messenger'
+import { TabGuard } from './components/TabGuard/TabGuard'
 import { clearCredentials, loadCredentials, saveCredentials } from './state/storage'
 
 export default function App() {
@@ -22,6 +23,8 @@ export default function App() {
   }
 
   return (
-    <Messenger key={credentials.idInstance} credentials={credentials} onLogout={handleLogout} />
+    <TabGuard key={credentials.idInstance} channelName={`green-api-chat:${credentials.idInstance}`}>
+      <Messenger credentials={credentials} onLogout={handleLogout} />
+    </TabGuard>
   )
 }
